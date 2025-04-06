@@ -1,0 +1,48 @@
+version: '3.7'
+
+services:
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+  alloy:
+    image: grafana/alloy
+    command: -config.file=/etc/alloy/config.alloy
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
+      - /var/log:/var/log  # Read system logs or service logs
+    depends_on:
+      - prometheus
+      - loki
+
+  service1:
+    build: ./app/service1
+    ports:
+      - "8001:8000"
+
+  service2:
+    build: ./app/service2
+    ports:
+      - "8002:8000"
+
